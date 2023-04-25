@@ -3396,6 +3396,16 @@
 	DT_PROP_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**
+ * @brief Like DT_INST_PROP_LEN(), but with a fallback to @p default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PROP_LEN(inst, prop) or @p default_value
+ */
+#define DT_INST_PROP_LEN_OR(inst, prop, default_value) \
+	DT_PROP_LEN_OR(DT_DRV_INST(inst), prop, default_value)
+
+/**
  * @deprecated Use DT_INST_PROP(inst, label)
  * @brief Get a `DT_DRV_COMPAT` instance's `label` property
  * @param inst instance number
@@ -3781,6 +3791,53 @@
 	DT_COMPAT_ON_BUS_INTERNAL(DT_DRV_COMPAT, bus)
 
 /**
+ * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
+ *        property.
+ *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo = <1>;
+ *             bar = <2>;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo = <2>;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz = <1>;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ANY_INST_HAS_PROP_STATUS_OKAY(foo) // 1
+ *     DT_ANY_INST_HAS_PROP_STATUS_OKAY(bar) // 1
+ *     DT_ANY_INST_HAS_PROP_STATUS_OKAY(baz) // 0
+ * @endcode
+ */
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_INST_NODE_HAS_PROP_AND_OR, prop) 0)
+
+/**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
  *        and status `okay`
  *
@@ -4066,6 +4123,10 @@
 /** @brief Helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+
+/** @brief Helper macro to OR multiple has property checks in a loop macro */
+#define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
+	DT_INST_NODE_HAS_PROP(inst, prop) ||
 
 /** @endcond */
 
